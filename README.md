@@ -22,6 +22,16 @@ This repo contains:
 
 Note: Vaults are created per-brand using the Factory.
 
+## Concept & Benefits
+- Brands/creators can launch their own branded stablecoins that fans/users can mint 1:1 with USDC.
+- Branded stablecoins can be programmed with entitlements/benefits (exclusive content, product discounts, partner perks, early access, etc.).
+- Users/fans enjoy these benefits in addition to holding a stable, redeemable asset.
+- Brands/creators deepen engagement while earning on-chain yield from the pooled principal supplied to Aave.
+
+Future considerations:
+- Configurable yield sharing with users/fans/partners.
+- Richer on-chain/off-chain benefit gating and integrations.
+
 ## Web app – local run
 1) Create env file
 

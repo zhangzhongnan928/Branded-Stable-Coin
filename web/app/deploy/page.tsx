@@ -28,9 +28,11 @@ export default function DeployPage() {
   const publicClient = usePublicClient()
   const runTx = useTx()
 
-  // Always start fresh — never pre-fill from env. This page deploys a NEW Factory; the
-  // result only appears after the user signs the deploy in this session.
-  const [factory, setFactory] = useState<`0x${string}` | ''>('')
+  // Deploy card always deploys a NEW Factory; its "deployed" result only appears after the
+  // user signs this session (never pre-filled from env). The seed step targets the freshly
+  // deployed factory OR the one configured in env, so it still works after a page refresh.
+  const [deployed, setDeployed] = useState<`0x${string}` | ''>('')
+  const seedTarget = (deployed || env.factoryAddress) as `0x${string}` | ''
   const [deploying, setDeploying] = useState(false)
   const [seeding, setSeeding] = useState(false)
   const [seeded, setSeeded] = useState<string[]>([])
@@ -46,7 +48,7 @@ export default function DeployPage() {
       )
       if (hash) {
         const receipt = await publicClient!.getTransactionReceipt({ hash })
-        if (receipt.contractAddress) setFactory(receipt.contractAddress)
+        if (receipt.contractAddress) setDeployed(receipt.contractAddress)
       }
     } finally {
       setDeploying(false)
@@ -54,9 +56,9 @@ export default function DeployPage() {
   }
 
   const onSeed = async () => {
-    if (!factory || !address) return
+    if (!seedTarget || !address) return
     const owner = address
-    const factoryAddr = factory
+    const factoryAddr = seedTarget
     setSeeding(true)
     try {
       for (const b of DEMO_BRANDS) {
@@ -128,22 +130,22 @@ export default function DeployPage() {
             </dl>
             <div className="mt-5">
               <Button size="lg" fullWidth loading={deploying} leftIcon={<Rocket className="h-4 w-4" />} onClick={onDeploy}>
-                {factory ? 'Re-deploy Factory' : 'Deploy Factory'}
+                {deployed ? 'Re-deploy Factory' : 'Deploy Factory'}
               </Button>
             </div>
           </Card>
 
           {/* Result */}
-          {factory && (
+          {deployed && (
             <Card className="mt-6 border-success/40">
               <div className="flex items-center gap-2 text-success">
                 <CheckCircle2 className="h-5 w-5" />
                 <h2 className="font-display text-lg font-semibold">Factory deployed</h2>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <AddressChip address={factory} />
+                <AddressChip address={deployed} />
                 <a
-                  href={explorerAddress(factory)}
+                  href={explorerAddress(deployed)}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
@@ -155,7 +157,7 @@ export default function DeployPage() {
                 Set this in <code className="rounded bg-surface-2 px-1 py-0.5 font-mono text-xs">web/.env.local</code>:
               </p>
               <pre className="mt-2 overflow-x-auto rounded-lg bg-surface-2 p-3 font-mono text-xs">
-                NEXT_PUBLIC_FACTORY_ADDRESS={factory}
+                NEXT_PUBLIC_FACTORY_ADDRESS={deployed}
               </pre>
             </Card>
           )}
@@ -174,7 +176,7 @@ export default function DeployPage() {
               ))}
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
-              <Button variant="secondary" loading={seeding} disabled={!factory} onClick={onSeed}>
+              <Button variant="secondary" loading={seeding} disabled={!seedTarget} onClick={onSeed}>
                 {seeded.length === DEMO_BRANDS.length ? 'Re-seed' : `Create ${DEMO_BRANDS.length} demo brands`}
               </Button>
               {seeded.length > 0 && (
@@ -183,7 +185,7 @@ export default function DeployPage() {
                 </Link>
               )}
             </div>
-            {!factory && <p className="mt-2 text-xs text-fg-subtle">Deploy the Factory first.</p>}
+            {!seedTarget && <p className="mt-2 text-xs text-fg-subtle">Deploy or configure a Factory first.</p>}
           </Card>
 
           <Section className="!py-8">

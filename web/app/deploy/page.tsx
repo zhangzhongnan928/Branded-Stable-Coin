@@ -28,7 +28,9 @@ export default function DeployPage() {
   const publicClient = usePublicClient()
   const runTx = useTx()
 
-  const [factory, setFactory] = useState<`0x${string}` | ''>(env.factoryAddress || '')
+  // Always start fresh — never pre-fill from env. This page deploys a NEW Factory; the
+  // result only appears after the user signs the deploy in this session.
+  const [factory, setFactory] = useState<`0x${string}` | ''>('')
   const [deploying, setDeploying] = useState(false)
   const [seeding, setSeeding] = useState(false)
   const [seeded, setSeeded] = useState<string[]>([])

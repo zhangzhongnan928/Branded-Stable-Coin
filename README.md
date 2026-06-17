@@ -1,98 +1,113 @@
-# Branded Stable Coin – Contracts & DApp (Base Sepolia)
+# Minted — your coin, your community, their perks
 
-A minimal end-to-end implementation of the "Branded Stablecoin" MVP:
-- Users deposit USDC → supplied to Aave V3 → mint brand token 1:1
-- Users redeem brand token 1:1 for USDC
-- Brand can harvest yield (surplus over principal) to its treasury
+**Minted** lets any creator or community launch their own dollar-backed coin in minutes.
+Fans deposit USDC, get the brand coin **1:1**, and hold it to unlock the creator's perks
+(token-gated Discord, discounts, drops, IRL/VIP access, partner deals). Fans can **redeem
+1:1 for USDC anytime** — their principal is always theirs. The creator keeps the **yield**
+the pooled deposits earn on Aave.
 
-This repo contains:
-- Solidity contracts (Foundry)
-- Next.js DApp with Wagmi/Viem (Base Sepolia)
-
-## Prerequisites
-- Node 20+ and pnpm (Corepack): `corepack enable && corepack prepare pnpm@latest --activate`
-- Wallet (MetaMask) on Base Sepolia (chainId 84532)
-- Foundry (optional, for contracts): `curl -sSfL https://foundry.paradigm.xyz | bash` then `foundryup`
-
-## Deployed contracts (Base Sepolia)
-- Factory: `0x5ED49796e59007E6b3360d85C3049e353743B0B8`
-- USDC: `0xba50Cd2A20f6DA35D788639E581bca8d0B5d4D5f`
-- Aave IPool: `0x8bAB6d1b75f19e9eD9fCe8b9BD338844fF79aE27`
-- aUSDC: `0x10F1A9D11CDf50041f3f8cB7191CBE2f31750ACC`
-
-Note: Vaults are created per-brand using the Factory.
-
-## Concept & Benefits
-- Brands/creators can launch their own branded stablecoins that fans/users can mint 1:1 with USDC.
-- Branded stablecoins can be programmed with entitlements/benefits (exclusive content, product discounts, partner perks, early access, etc.).
-- Users/fans enjoy these benefits in addition to holding a stable, redeemable asset.
-- Brands/creators deepen engagement while earning on-chain yield from the pooled principal supplied to Aave.
-
-Future considerations:
-- Configurable yield sharing with users/fans/partners.
-- Richer on-chain/off-chain benefit gating and integrations.
-
-## Web app – local run
-1) Create env file
-
-Create `web/.env.local`:
+> Testnet demo on **Base Sepolia**. No real money. For feedback only — not financial advice.
 
 ```
-NEXT_PUBLIC_CHAIN_ID=84532
-NEXT_PUBLIC_FACTORY_ADDRESS=0x5ED49796e59007E6b3360d85C3049e353743B0B8
-NEXT_PUBLIC_USDC_ADDRESS=0xba50Cd2A20f6DA35D788639E581bca8d0B5d4D5f
-NEXT_PUBLIC_AUSDC_ADDRESS=0x10F1A9D11CDf50041f3f8cB7191CBE2f31750ACC
-NEXT_PUBLIC_RPC_URL=https://sepolia.base.org
+USDC ──deposit──▶ BrandVault ──supply──▶ Aave V3        (fan gets $COIN 1:1)
+$COIN ─redeem──▶ BrandVault ──withdraw─▶ USDC to fan    (principal, always 1:1)
+                  yield (aBalance − principal) ──harvest──▶ creator treasury (− protocol fee)
 ```
 
-2) Install & start
+## What's in here
 
+- **Contracts (Foundry)** — `Factory` deploys per-brand `BrandVault` + `BrandToken`
+  (ERC-20 + ERC-5169) clones (EIP-1167).
+- **Web (Next.js 14 + wagmi/viem)** — a real product: landing, creator launch wizard,
+  public brand page (mint/redeem + perks), and a creator dashboard.
+
+### Contract design highlights
+
+- **Auto-wired aToken.** The vault derives its aToken from Aave's canonical
+  `getReserveData(USDC)` at creation (and via `rewireAToken()`), so accounting is correct
+  immediately — no manual setup. The aToken is *only* ever sourced from the trusted Aave
+  pool, never from caller input, so a brand owner cannot repoint accounting at a fake token.
+- **Share = aTokens actually credited.** Aave's ray math can credit `amount − dust`; the
+  vault mints shares equal to the real aToken delta, keeping `totalSupply == totalPrincipal
+  ≤ aBalance` so every holder can always redeem 1:1 (verified against live Aave).
+- **Protocol fee on yield only.** `harvestYield()` splits the surplus over principal as a
+  protocol fee (default **5%**, hard-capped at 10%, read live from the Factory) + the
+  remainder to the creator treasury. The fee can never touch principal.
+- **Redeem is never pausable.** Pausing halts new mints + harvest; holders can always exit.
+- **Brand profile on-chain** (`logoURI`, `description`, `benefitsURI`) so the frontend
+  renders brand pages and perks with no off-chain infra. Perks are a JSON blob stored in
+  `benefitsURI` and edited from the dashboard in one transaction.
+
+## Verified Base Sepolia addresses (chainId 84532)
+
+| | Address |
+|---|---|
+| Aave V3 Pool | `0x8bAB6d1b75f19e9eD9fCe8b9BD338844fF79aE27` |
+| Test USDC (Aave market) | `0xba50Cd2A20f6DA35D788639E581bca8d0B5d4D5f` |
+| aUSDC | `0x10F1A9D11CDf50041f3f8cB7191CBE2f31750ACC` |
+
+The Factory is per-deployment — set its address in `web/.env.local` after deploying.
+
+## Quickstart
+
+### 1. Contracts
+
+```bash
+forge install            # pulls forge-std (git submodule)
+forge test               # 27 unit/invariant/fuzz tests
+BASE_SEPOLIA_RPC_URL=https://sepolia.base.org forge test --match-contract BrandForkTest  # live-fork tests
 ```
-cd web
-pnpm install
-pnpm dev -p 3001
-```
-Open http://localhost:3001 and connect your wallet (Base Sepolia).
 
-## Using the DApp
-### Brand (owner)
-- Create Brand: fill Name, Symbol, Treasury, Cap
-  - Cap is in human USDC (UI scales to 6 decimals). Example: `1000.0`
-- Set aToken: set the vault’s aToken to aUSDC (`0x10F1...0ACC`)
-- Update Cap: adjust cap if deposits hit the limit
-- Harvest Yield: enabled when Available Yield > 0
+Deploy the Factory (needs a funded deployer key + Base Sepolia ETH):
 
-### User
-- Deposit + Mint: approve USDC then deposit the amount (USDC has 6 decimals, UI scales)
-- Redeem: burn brand token to receive USDC 1:1
-
-### Available Yield
-- Computed as `max(aTokenBalance − totalPrincipal, 0)`
-- After setting aToken on the vault, yield updates as aUSDC increases
-
-## Common errors
-- `CAP`: your deposit exceeds `cap`. Increase cap via Set Cap.
-- `NO_YIELD`: harvest attempted when `availableYield == 0`. Wait until aUSDC > principal.
-- Wallet conflicts: disable other wallet extensions if MetaMask errors during provider injection.
-- Port in use: run the app with `-p 3001` or kill the process on 3000/3001.
-
-## Contracts – develop & test
-```
-forge test -vvv
-```
-Deploy Factory (script uses Base Sepolia addresses above):
-```
+```bash
 export PRIVATE_KEY=0x<your_key>
 forge script script/DeployFactory.s.sol:DeployFactory \
-  --rpc-url https://sepolia.base.org \
-  --chain-id 84532 \
-  --broadcast
+  --rpc-url https://sepolia.base.org --chain-id 84532 --broadcast
+# note the printed Factory address
 ```
 
-## Security & notes
-- This is an MVP; no upgradeability for vault/token; use at your own risk
-- Aave integration uses V3 `supply()` and `withdraw()`
-- USDC/aUSDC decimals: 6
+### 2. Web
+
+```bash
+cd web
+cp .env.example .env.local           # then set NEXT_PUBLIC_FACTORY_ADDRESS to the deployed Factory
+pnpm install
+pnpm dev                             # http://localhost:3000
+```
+
+If `NEXT_PUBLIC_FACTORY_ADDRESS` is unset, the explore page shows demo brand previews.
+
+### 3. Seed demo brands (optional, so the demo isn't empty)
+
+```bash
+PRIVATE_KEY=0x<your_key> FACTORY=0x<factory_addr> node web/scripts/seed.mjs
+```
+
+Creates Vibe (`$VIBE`), PixelForge (`$FORGE`), and Cloud9 Coffee (`$CUP`) with full perks.
+
+### Get testnet funds
+
+- **Gas (Base Sepolia ETH):** https://portal.cdp.coinbase.com/products/faucet
+- **Test USDC (must be the Aave market token):** https://app.aave.com/faucet/?marketName=proto_base_sepolia_v3
+
+## Using the app
+
+- **Creators** — `/launch`: name your coin, pick a color, set a cap and perks, deploy in one
+  tx. Manage from `/dashboard`: harvest yield, edit perks, adjust cap, pause, change treasury.
+- **Fans** — open a coin's page (`/b/<vault>`), mint with USDC, see which perks you've
+  unlocked, redeem anytime. No APY/yield is ever shown to fans (it's the creator's).
+
+## Security notes (demo)
+
+- MVP, unaudited — do not use with real funds.
+- Bank-run / Aave-insolvency: if `aBalance < totalPrincipal` the last redeemers could fail;
+  the vault exposes `isSolvent()` / `solvencyDeficit()` and the UI surfaces it.
+- Donations of aUSDC/USDC directly to a vault count as harvestable yield (they only ever
+  *add* backing; principal redemption is unaffected). The protocol fee applies to them.
+- Brand creation is permissionless; brand owners are untrusted relative to fans, which is
+  why the aToken accounting can only ever be the canonical Aave aUSDC.
 
 ## License
+
 MIT

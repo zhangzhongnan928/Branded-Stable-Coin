@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  experimental: { typedRoutes: true },
   transpilePackages: ['wagmi', '@wagmi/connectors', 'viem'],
   webpack: (config) => {
     config.resolve = config.resolve || {}

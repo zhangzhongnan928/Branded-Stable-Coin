@@ -1,16 +1,95 @@
 import type { Config } from 'tailwindcss'
 
+const ch = (v: string) => `rgb(var(${v}) / <alpha-value>)`
+
 const config: Config = {
-  content: [
-    './app/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './pages/**/*.{ts,tsx}',
-  ],
+  darkMode: 'class',
+  content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        bg: ch('--bg'),
+        surface: ch('--surface'),
+        'surface-2': ch('--surface-2'),
+        'surface-3': ch('--surface-3'),
+        fg: ch('--fg'),
+        'fg-muted': ch('--fg-muted'),
+        'fg-subtle': ch('--fg-subtle'),
+        'fg-inverted': ch('--fg-inverted'),
+        border: ch('--border'),
+        'border-strong': ch('--border-strong'),
+        ring: ch('--ring'),
+        accent: ch('--accent'),
+        'accent-hover': ch('--accent-hover'),
+        'accent-fg': ch('--accent-fg'),
+        'accent-soft': ch('--accent-soft'),
+        success: ch('--success'),
+        'success-soft': ch('--success-soft'),
+        danger: ch('--danger'),
+        'danger-soft': ch('--danger-soft'),
+        warning: ch('--warning'),
+        'warning-soft': ch('--warning-soft'),
+        info: ch('--info'),
+        usdc: ch('--usdc'),
+      },
+      fontFamily: {
+        sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'var(--font-sans)', 'sans-serif'],
+        mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+      },
+      fontSize: {
+        '2xs': ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.02em' }],
+        xs: ['0.75rem', { lineHeight: '1.1rem', letterSpacing: '0.01em' }],
+        sm: ['0.875rem', { lineHeight: '1.35rem' }],
+        base: ['1rem', { lineHeight: '1.6rem' }],
+        lg: ['1.125rem', { lineHeight: '1.7rem' }],
+        xl: ['1.375rem', { lineHeight: '1.85rem', letterSpacing: '-0.01em' }],
+        '2xl': ['1.75rem', { lineHeight: '2.1rem', letterSpacing: '-0.015em' }],
+        '3xl': ['2.25rem', { lineHeight: '2.5rem', letterSpacing: '-0.02em' }],
+        '4xl': ['3rem', { lineHeight: '3.1rem', letterSpacing: '-0.025em' }],
+        '5xl': ['3.75rem', { lineHeight: '3.9rem', letterSpacing: '-0.03em' }],
+        stat: ['2.75rem', { lineHeight: '1', letterSpacing: '-0.02em' }],
+      },
+      spacing: {
+        '4.5': '1.125rem', '13': '3.25rem', '15': '3.75rem',
+        '18': '4.5rem', '22': '5.5rem', '30': '7.5rem',
+      },
+      maxWidth: {
+        page: '1120px',
+        app: '960px',
+        'prose-tight': '640px',
+      },
+      borderRadius: {
+        sm: '8px', DEFAULT: '12px', md: '14px', lg: '18px',
+        xl: '24px', '2xl': '32px', pill: '9999px',
+      },
+      boxShadow: {
+        xs: '0 1px 2px 0 rgb(16 17 24 / 0.05)',
+        sm: '0 1px 3px 0 rgb(16 17 24 / 0.07), 0 1px 2px -1px rgb(16 17 24 / 0.06)',
+        md: '0 4px 12px -2px rgb(16 17 24 / 0.10), 0 2px 6px -2px rgb(16 17 24 / 0.06)',
+        lg: '0 12px 32px -8px rgb(16 17 24 / 0.14), 0 4px 12px -4px rgb(16 17 24 / 0.08)',
+        xl: '0 24px 56px -12px rgb(16 17 24 / 0.20)',
+        glow: '0 8px 28px -6px rgb(var(--accent) / 0.45)',
+        'inner-line': 'inset 0 0 0 1px rgb(var(--border))',
+      },
+      keyframes: {
+        'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
+        'slide-up': { from: { opacity: '0', transform: 'translateY(8px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+        'slide-in-right': { from: { transform: 'translateX(100%)' }, to: { transform: 'translateX(0)' } },
+        'scale-in': { from: { opacity: '0', transform: 'scale(.96)' }, to: { opacity: '1', transform: 'scale(1)' } },
+        shimmer: { '100%': { transform: 'translateX(100%)' } },
+        'count-pop': { '0%': { transform: 'scale(1)' }, '40%': { transform: 'scale(1.04)' }, '100%': { transform: 'scale(1)' } },
+      },
+      animation: {
+        'fade-in': 'fade-in .2s ease-out',
+        'slide-up': 'slide-up .28s cubic-bezier(.16,1,.3,1)',
+        'sheet-in': 'slide-in-right .3s cubic-bezier(.16,1,.3,1)',
+        'scale-in': 'scale-in .18s cubic-bezier(.16,1,.3,1)',
+        shimmer: 'shimmer 1.6s infinite',
+        'count-pop': 'count-pop .4s ease-out',
+      },
+    },
   },
   plugins: [],
 }
 export default config
-
-

@@ -1,8 +1,19 @@
-out
-cache
-lib
+# Foundry build artifacts (forge-std lives in lib/ as a git submodule — do NOT ignore lib)
+/out
+/cache
+/broadcast/**/dry-run/
+
+# Node / Next.js
 node_modules
+web/.next
+web/out
+
+# Local env & OS
 .DS_Store
 .env
+.env*.local
+!web/.env.example
+.gstack/
 
-
+web/tsconfig.tsbuildinfo
+*.tsbuildinfo
